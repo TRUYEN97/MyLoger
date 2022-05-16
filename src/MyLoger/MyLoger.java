@@ -49,15 +49,22 @@ public class MyLoger {
         return begin(file, append);
     }
 
-    public void addLog(String txt) {
+    public void addLog(Object txt) {
+        if (txt == null) {
+            add("null");
+            return;
+        }
+        String data = txt.toString();
+        for (String line : data.split("\n")) {
+            add(line);
+        }
+    }
+
+    private void add(String data) {
         try {
-            String str;
-            for (String string : txt.split("\r\n")) {
-                str = String.format("%s :%s\r\n",
-                        this.timeBase.getDateTime(TimeBase.UTC,
-                                TimeBase.SIMPLE_DATE_TIME), txt);
-                this.writer.write(str);
-            }
+            this.writer.write(String.format("%s : %s\r\n",
+                    this.timeBase.getDateTime(TimeBase.UTC,
+                            TimeBase.SIMPLE_DATE_TIME), data.trim()));
             this.writer.flush();
         } catch (IOException ex) {
             System.err.println(ex);
@@ -81,7 +88,7 @@ public class MyLoger {
                 builder.append(scanner.nextLine());
             }
             return builder.toString();
-        } catch (Exception e) {
+        } catch (FileNotFoundException e) {
             System.err.println(e);
             return null;
         }
