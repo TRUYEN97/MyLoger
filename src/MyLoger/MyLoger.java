@@ -10,6 +10,8 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -91,6 +93,16 @@ public class MyLoger {
         } catch (FileNotFoundException e) {
             System.err.println(e);
             return null;
+        }
+    }
+
+    public void close() {
+        if (this.writer != null) {
+            try {
+                this.writer.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 }
