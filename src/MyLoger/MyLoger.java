@@ -10,8 +10,6 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -22,6 +20,7 @@ public class MyLoger {
     private FileWriter writer;
     private Scanner scanner;
     private File file;
+    private String newLog;
     private final TimeBase timeBase;
 
     public MyLoger() {
@@ -56,17 +55,22 @@ public class MyLoger {
             add("null");
             return;
         }
-        String data = txt.toString();
-        for (String line : data.split("\n")) {
+        for (String line : txt.toString().split("\n")) {
             add(line);
         }
     }
 
+    public File getFileLog() {
+        return file;
+    }
+
     private void add(String data) {
         try {
-            this.writer.write(String.format("%s : %s\r\n",
+            String log = String.format("%s : %s\r\n",
                     this.timeBase.getDateTime(TimeBase.UTC,
-                            TimeBase.SIMPLE_DATE_TIME), data.trim()));
+                            TimeBase.SIMPLE_DATE_TIME), data.trim());
+            newLog = log;
+            this.writer.write(log);
             this.writer.flush();
         } catch (IOException ex) {
             System.err.println(ex);
@@ -87,7 +91,7 @@ public class MyLoger {
         try {
             this.scanner = new Scanner(this.file);
             while (scanner.hasNextLine()) {
-                builder.append(scanner.nextLine());
+                builder.append(scanner.nextLine()).append("\r\n");
             }
             return builder.toString();
         } catch (FileNotFoundException e) {
@@ -104,5 +108,11 @@ public class MyLoger {
                 ex.printStackTrace();
             }
         }
+    }
+
+    public String getNewLog() {
+        String result = newLog;
+        newLog = null;
+        return result;
     }
 }
