@@ -4,7 +4,7 @@
  */
 package MyLoger;
 
-import TimeBase.TimeBase;
+import Time.TimeBase;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
