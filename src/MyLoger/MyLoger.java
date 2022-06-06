@@ -36,7 +36,7 @@ public class MyLoger {
 
     public boolean begin(File file, boolean append) {
         try {
-            if (!file.getParentFile().exists()) {
+            if (file.getParentFile() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
             this.writer = new FileWriter(file, append);
