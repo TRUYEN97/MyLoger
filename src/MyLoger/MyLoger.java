@@ -77,6 +77,7 @@ public class MyLoger {
     private void add(String data) {
         if (!isOpen) {
             System.err.println("Loger has close!");
+            System.err.println("can't write: " + data);
             return;
         }
         try {
