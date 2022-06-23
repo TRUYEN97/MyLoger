@@ -70,20 +70,19 @@ public class MyLoger {
             return;
         }
         for (String line : txt.toString().split("\n")) {
-            add(line);
+            add(String.format("%s:   %s\r\n",
+                    this.timeBase.getDateTime(TimeBase.UTC,
+                            TimeBase.SIMPLE_DATE_TIME), line.trim()));
         }
     }
 
-    private void add(String data) {
+    public void add(String log) {
         if (!isOpen) {
             System.err.println("Loger has close!");
-            System.err.println("can't write: " + data);
+            System.err.println("can't write: " + log);
             return;
         }
         try {
-            String log = String.format("%s : %s\r\n",
-                    this.timeBase.getDateTime(TimeBase.UTC,
-                            TimeBase.SIMPLE_DATE_TIME), data.trim());
             addToQueue(log);
             this.writer.write(log);
             this.writer.flush();
