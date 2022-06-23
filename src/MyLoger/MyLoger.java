@@ -72,7 +72,7 @@ public class MyLoger {
         for (String line : txt.toString().split("\n")) {
             add(String.format("%s:   %s\r\n",
                     this.timeBase.getDateTime(TimeBase.UTC,
-                            TimeBase.SIMPLE_DATE_TIME), line.trim()));
+                            TimeBase.DATE_TIME_MS), line.trim()));
         }
     }
 
