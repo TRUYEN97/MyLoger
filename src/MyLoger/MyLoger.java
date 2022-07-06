@@ -65,10 +65,6 @@ public class MyLoger {
     }
 
     public void addLog(Object txt) {
-        if (txt == null) {
-            add("null");
-            return;
-        }
         for (String line : txt.toString().split("\n")) {
             add(String.format("%s:   %s\r\n",
                     this.timeBase.getDateTime(TimeBase.UTC,
@@ -128,6 +124,14 @@ public class MyLoger {
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
+        }
+    }
+
+    public void addLog(String key, Object str) {
+        for (String line : str.toString().split("\n")) {
+            add(String.format("%s:   [%s] %s\r\n",
+                    this.timeBase.getDateTime(TimeBase.UTC,
+                            TimeBase.DATE_TIME_MS), key, line.trim()));
         }
     }
 }
