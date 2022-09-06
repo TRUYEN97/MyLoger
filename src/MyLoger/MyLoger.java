@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.Scanner;
  *
  * @author Administrator
  */
-public class MyLoger {
+public class MyLoger implements Cloneable {
 
     private FileWriter writer;
     private File file;
@@ -34,27 +35,27 @@ public class MyLoger {
         this.queuelog = new ArrayDeque<>();
     }
 
-    public boolean begin(File file, boolean append) {
+    public void begin(File file, boolean append) throws IOException {
         try {
-            if (file.getParentFile() != null && !file.getParentFile().exists()) {
+            if (file != null && file.getParentFile() != null && !file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
             this.writer = new FileWriter(file, append);
             this.file = file;
-            return isOpen = true;
+            isOpen = true;
         } catch (IOException ex) {
-            System.err.println(ex);
-            return false;
+            close();
+            throw ex;
         }
     }
 
-    public boolean begin(File file, boolean append, boolean override) {
-        if (override && file.exists()) {
+    public void begin(File file, boolean append, boolean override) throws IOException {
+        if (file != null && override && file.exists()) {
             if (!file.delete()) {
-                return false;
+               throw new FileSystemException("Can't delete "+file.getPath());
             }
         }
-        return begin(file, append);
+        begin(file, append);
     }
 
     public Queue<String> getQueueLog() {
@@ -115,15 +116,11 @@ public class MyLoger {
         }
     }
 
-    public void close() {
+    public void close() throws IOException {
         this.queueLogs.clear();
         if (this.writer != null) {
-            try {
-                this.writer.close();
-                isOpen = false;
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+            this.writer.close();
+            isOpen = false;
         }
     }
 
