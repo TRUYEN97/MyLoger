@@ -65,7 +65,7 @@ public class MyLoger implements Cloneable {
         return addQueueToList(new ArrayDeque<>(this.queuelog));
     }
 
-    public void addLog(Object txt) {
+    public synchronized void addLog(Object txt) {
         for (String line : txt.toString().split("\n")) {
             add(String.format("%s:   %s\r\n",
                     this.timeBase.getDateTime(TimeBase.UTC,
@@ -73,7 +73,7 @@ public class MyLoger implements Cloneable {
         }
     }
 
-    public void add(String log) {
+    public synchronized void add(String log) {
         if (!isOpen) {
             System.err.println("Loger has close!");
             System.err.println("can't write: " + log);
