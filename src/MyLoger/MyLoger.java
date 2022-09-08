@@ -25,12 +25,10 @@ public class MyLoger implements Cloneable {
     private File file;
     private final TimeBase timeBase;
     private final List<Queue<String>> queueLogs;
-    private final Queue<String> queuelog;
 
     public MyLoger() {
         this.timeBase = new TimeBase();
         this.queueLogs = new ArrayList<>();
-        this.queuelog = new ArrayDeque<>();
     }
 
     public void begin(File file, boolean append) throws IOException {
@@ -57,10 +55,7 @@ public class MyLoger implements Cloneable {
     }
 
     public Queue<String> getQueueLog() {
-        if (this.queueLogs.isEmpty()) {
-            return addQueueToList(this.queuelog);
-        }
-        return addQueueToList(new ArrayDeque<>(this.queuelog));
+       return addQueueToList(new ArrayDeque<>());
     }
 
     public synchronized void addLog(Object txt) throws IOException {
@@ -106,17 +101,15 @@ public class MyLoger implements Cloneable {
     }
 
     private void addToQueue(String log) {
-        if (queueLogs.isEmpty()) {
-            this.queuelog.add(log);
-        }
         for (Queue<String> queueLog : queueLogs) {
             queueLog.add(log);
         }
     }
 
     private Queue<String> addQueueToList(Queue<String> queue) {
+        queue.add(getLog());
         this.queueLogs.add(queue);
-        return this.queuelog;
+        return queue;
     }
 
     public String getLog() {
@@ -138,7 +131,6 @@ public class MyLoger implements Cloneable {
 
     public void close() throws IOException {
         this.queueLogs.clear();
-        this.queuelog.clear();
         if (this.writer != null) {
             this.writer.close();
             this.writer = null;
