@@ -5,8 +5,11 @@
 package MyLoger;
 
 import Time.TimeBase;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
@@ -52,7 +55,7 @@ public class MyLoger implements Cloneable {
     public void begin(File file, boolean append, boolean override) throws IOException {
         if (file != null && override && file.exists()) {
             if (!file.delete()) {
-               throw new FileSystemException("Can't delete "+file.getPath());
+                throw new FileSystemException("Can't delete " + file.getPath());
             }
         }
         begin(file, append);
@@ -65,7 +68,13 @@ public class MyLoger implements Cloneable {
         return addQueueToList(new ArrayDeque<>(this.queuelog));
     }
 
-    public synchronized void addLog(Object txt) {
+    public synchronized void addLog(Object txt) throws IOException {
+        if (txt == null) {
+            add(String.format("%s:  null\r\n",
+                    this.timeBase.getDateTime(TimeBase.UTC,
+                            TimeBase.DATE_TIME_MS)));
+            return;
+        }
         for (String line : txt.toString().split("\n")) {
             add(String.format("%s:   %s\r\n",
                     this.timeBase.getDateTime(TimeBase.UTC,
@@ -73,20 +82,29 @@ public class MyLoger implements Cloneable {
         }
     }
 
-    public synchronized void add(String log) {
+    public synchronized void addLog(String key, Object str) throws IOException {
+        if (str == null) {
+            add(String.format("%s:  [%s] null\r\n",
+                    this.timeBase.getDateTime(TimeBase.UTC,
+                            TimeBase.DATE_TIME_MS), key));
+            return;
+        }
+        for (String line : str.toString().split("\n")) {
+            add(String.format("%s:   [%s] %s\r\n",
+                    this.timeBase.getDateTime(TimeBase.UTC,
+                            TimeBase.DATE_TIME_MS), key, line.trim()));
+        }
+    }
+
+    public synchronized void add(String log) throws IOException {
         if (!isOpen) {
             System.err.println("Loger has close!");
             System.err.println("can't write: " + log);
             return;
         }
-        try {
-            addToQueue(log);
-            this.writer.write(log);
-            this.writer.flush();
-        } catch (IOException ex) {
-            System.err.println(ex);
-            isOpen = false;
-        }
+        addToQueue(log);
+        this.writer.write(log);
+        this.writer.flush();
     }
 
     private void addToQueue(String log) {
@@ -105,13 +123,14 @@ public class MyLoger implements Cloneable {
 
     public String getLog() {
         StringBuilder builder = new StringBuilder();
-        try ( Scanner scanner = new Scanner(this.file)) {
-            while (scanner.hasNextLine()) {
-                builder.append(scanner.nextLine()).append("\r\n");
+        try ( BufferedReader reader = new BufferedReader(new FileReader(this.file))) {
+            String line;
+            while ((line = reader.readLine()) == null) {
+                builder.append(line).append("\r\n");
             }
             return builder.toString();
-        } catch (FileNotFoundException e) {
-            System.err.println(e);
+        } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -121,14 +140,6 @@ public class MyLoger implements Cloneable {
         if (this.writer != null) {
             this.writer.close();
             isOpen = false;
-        }
-    }
-
-    public void addLog(String key, Object str) {
-        for (String line : str.toString().split("\n")) {
-            add(String.format("%s:   [%s] %s\r\n",
-                    this.timeBase.getDateTime(TimeBase.UTC,
-                            TimeBase.DATE_TIME_MS), key, line.trim()));
         }
     }
 }
