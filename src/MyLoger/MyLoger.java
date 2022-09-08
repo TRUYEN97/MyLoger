@@ -48,7 +48,7 @@ public class MyLoger implements Cloneable {
 
     public void begin(File file, boolean append, boolean override) throws IOException {
         if (file != null && override && file.exists()) {
-            try (FileWriter fw = new FileWriter(file)) {
+            try ( FileWriter fw = new FileWriter(file)) {
                 fw.write("");
                 fw.flush();
             }
@@ -92,6 +92,9 @@ public class MyLoger implements Cloneable {
     }
 
     public synchronized void add(String log) throws IOException {
+        if (log == null) {
+            return;
+        }
         if (writer == null) {
             System.err.println("writer == null !");
             System.err.println("can't write: " + log);
