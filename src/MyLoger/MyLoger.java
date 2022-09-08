@@ -5,19 +5,15 @@
 package MyLoger;
 
 import Time.TimeBase;
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.FileSystemException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
-import java.util.Scanner;
 
 /**
  *
@@ -30,7 +26,6 @@ public class MyLoger implements Cloneable {
     private final TimeBase timeBase;
     private final List<Queue<String>> queueLogs;
     private final Queue<String> queuelog;
-    private boolean isOpen;
 
     public MyLoger() {
         this.timeBase = new TimeBase();
@@ -45,7 +40,6 @@ public class MyLoger implements Cloneable {
             }
             this.writer = new FileWriter(file, append);
             this.file = file;
-            isOpen = true;
         } catch (IOException ex) {
             close();
             throw ex;
@@ -54,8 +48,9 @@ public class MyLoger implements Cloneable {
 
     public void begin(File file, boolean append, boolean override) throws IOException {
         if (file != null && override && file.exists()) {
-            if (!file.delete()) {
-                throw new FileSystemException("Can't delete " + file.getPath());
+            try (FileWriter fw = new FileWriter(file)) {
+                fw.write("");
+                fw.flush();
             }
         }
         begin(file, append);
@@ -97,8 +92,8 @@ public class MyLoger implements Cloneable {
     }
 
     public synchronized void add(String log) throws IOException {
-        if (!isOpen) {
-            System.err.println("Loger has close!");
+        if (writer == null) {
+            System.err.println("writer == null !");
             System.err.println("can't write: " + log);
             return;
         }
@@ -122,10 +117,13 @@ public class MyLoger implements Cloneable {
     }
 
     public String getLog() {
+        if (this.file == null) {
+            return null;
+        }
         StringBuilder builder = new StringBuilder();
         try ( BufferedReader reader = new BufferedReader(new FileReader(this.file))) {
             String line;
-            while ((line = reader.readLine()) == null) {
+            while ((line = reader.readLine()) != null) {
                 builder.append(line).append("\r\n");
             }
             return builder.toString();
@@ -137,9 +135,10 @@ public class MyLoger implements Cloneable {
 
     public void close() throws IOException {
         this.queueLogs.clear();
+        this.queuelog.clear();
         if (this.writer != null) {
             this.writer.close();
-            isOpen = false;
+            this.writer = null;
         }
     }
 }
