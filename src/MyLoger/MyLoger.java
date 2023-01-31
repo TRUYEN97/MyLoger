@@ -6,6 +6,7 @@ package MyLoger;
 
 import Time.TimeBase;
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -20,7 +21,7 @@ import java.util.TimeZone;
  *
  * @author Administrator
  */
-public class MyLoger implements Cloneable {
+public class MyLoger implements Cloneable, Closeable {
 
     private FileWriter writer;
     private File file;
@@ -131,6 +132,7 @@ public class MyLoger implements Cloneable {
         }
     }
 
+    @Override
     public void close() throws IOException {
         this.queueLogs.clear();
         if (this.writer != null) {
