@@ -6,7 +6,6 @@ package MyLoger;
 
 import Time.TimeBase;
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -21,48 +20,40 @@ import java.util.TimeZone;
  *
  * @author Administrator
  */
-public class MyLoger implements Cloneable, Closeable {
+public class MyLoger {
 
-    private FileWriter writer;
     private File file;
-    private final TimeBase timeBase;
-    private final List<Queue<String>> queueLogs;
+    private TimeBase timeBase;
+    private StringBuilder log;
+    private boolean saveMemory;
+    private List<Queue<String>> queueLogs;
 
     public MyLoger() {
-        this.timeBase = new TimeBase(TimeBase.UTC);
-        this.queueLogs = new ArrayList<>();
+        this(TimeBase.UTC);
     }
-    
+
     public MyLoger(TimeZone timeZone) {
         this.timeBase = new TimeBase(timeZone);
+        this.log = new StringBuilder();
+        this.saveMemory = false;
         this.queueLogs = new ArrayList<>();
     }
 
-    public void begin(File file, boolean append) throws IOException {
-        try {
-            if (file != null && file.getParentFile() != null && !file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            this.writer = new FileWriter(file, append);
-            this.file = file;
-        } catch (IOException ex) {
-            close();
-            throw ex;
+    public void setSaveMemory(boolean saveMemory) {
+        this.saveMemory = saveMemory;
+        if (saveMemory) {
+            this.log.delete(0, this.log.length());
         }
     }
 
-    public void begin(File file, boolean append, boolean override) throws IOException {
-        if (file != null && override && file.exists()) {
-            try ( FileWriter fw = new FileWriter(file)) {
-                fw.write("");
-                fw.flush();
-            }
+    public void setFile(File file) {
+        if (file == null) {
+            return;
         }
-        begin(file, append);
-    }
-
-    public Queue<String> getQueueLog() {
-       return addQueueToList(new ArrayDeque<>());
+        if (file.getParentFile() != null && !file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+        this.file = file;
     }
 
     public synchronized void addLog(Object txt) throws IOException {
@@ -77,10 +68,15 @@ public class MyLoger implements Cloneable, Closeable {
         }
     }
 
+    public synchronized void addLog(String str, Object... params) throws Exception {
+        String strLog = String.format(str, params);
+        addLog(strLog);
+    }
+
     public synchronized void addLog(String key, Object str) throws IOException {
         if (str == null) {
             add(String.format("%s:  [%s] null\r\n",
-                    this.timeBase.getDateTime(  TimeBase.DATE_TIME_MS), key));
+                    this.timeBase.getDateTime(TimeBase.DATE_TIME_MS), key));
             return;
         }
         for (String line : str.toString().split("\n")) {
@@ -89,18 +85,76 @@ public class MyLoger implements Cloneable, Closeable {
         }
     }
 
+    public synchronized void addLog(String key, String str, Object... params) throws Exception {
+        String strLog = String.format(str, params);
+        addLog(key, strLog);
+    }
+
     public synchronized void add(String log) throws IOException {
         if (log == null) {
             return;
         }
-        if (writer == null) {
-            System.err.println("writer == null !");
-            System.err.println("can't write: " + log);
-            return;
+        if (!saveMemory) {
+            this.log.append(log);
         }
         addToQueue(log);
-        this.writer.write(log);
-        this.writer.flush();
+        if (file != null && file.exists()) {
+            try ( FileWriter writer = new FileWriter(file, true)) {
+                writer.write(log);
+                writer.flush();
+            }
+        }
+    }
+
+    public synchronized void setLog(String log) throws IOException {
+        if (log == null) {
+            return;
+        }
+        if (!saveMemory) {
+            this.log.delete(0, this.log.length());
+            this.log.append(log);
+        }
+        if (file != null) {
+            try ( FileWriter writer = new FileWriter(file)) {
+                writer.write(log);
+                writer.flush();
+            }
+        }
+    }
+
+    public void clear() {
+        try {
+            setLog("");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public String getLog() throws IOException {
+        if (saveMemory) {
+            if (this.file == null) {
+                return null;
+            }
+            StringBuilder builder = new StringBuilder();
+            try ( BufferedReader reader = new BufferedReader(new FileReader(this.file))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    builder.append(line).append("\r\n");
+                }
+                return builder.toString();
+            }
+        } else {
+            return log.toString();
+        }
+    }
+
+    public Queue<String> getQueueLog() {
+        try {
+            return addQueueToList(new ArrayDeque<>());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
     }
 
     private void addToQueue(String log) {
@@ -109,35 +163,9 @@ public class MyLoger implements Cloneable, Closeable {
         }
     }
 
-    private Queue<String> addQueueToList(Queue<String> queue) {
+    private Queue<String> addQueueToList(Queue<String> queue) throws IOException {
         queue.add(getLog());
         this.queueLogs.add(queue);
         return queue;
-    }
-
-    public String getLog() {
-        if (this.file == null) {
-            return null;
-        }
-        StringBuilder builder = new StringBuilder();
-        try ( BufferedReader reader = new BufferedReader(new FileReader(this.file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line).append("\r\n");
-            }
-            return builder.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    @Override
-    public void close() throws IOException {
-        this.queueLogs.clear();
-        if (this.writer != null) {
-            this.writer.close();
-            this.writer = null;
-        }
     }
 }
