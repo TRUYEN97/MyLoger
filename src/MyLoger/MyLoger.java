@@ -98,7 +98,7 @@ public class MyLoger {
             this.log.append(log);
         }
         addToQueue(log);
-        if (file != null && file.exists()) {
+        if (file != null) {
             try ( FileWriter writer = new FileWriter(file, true)) {
                 writer.write(log);
                 writer.flush();
